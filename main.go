@@ -1,8 +1,8 @@
-// main.go
 package main
 
 import (
 	"encoding/json"
+	"hash/crc32"
 	"log"
 	"net/http"
 	"os"
@@ -11,6 +11,7 @@ import (
 	"github.com/go-redis/redis/v8"
 	"github.com/gorilla/mux"
 	"golang.org/x/net/context"
+	"strconv"
 )
 
 var (
@@ -26,18 +27,11 @@ type shortenResponse struct {
 	Short string `json:"short"`
 }
 
-// generateShortKeyNoRedis codifica un ID en base62
-func generateShortKey(id int64) string {
-	const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	short := ""
-	for id > 0 {
-		short = string(chars[id%62]) + short
-		id /= 62
-	}
-	return short
+func generateCRC32Key(url string) string {
+	hash := crc32.ChecksumIEEE([]byte(url))
+	return strconv.FormatUint(uint64(hash), 36) // base36 para hacerlo más corto
 }
 
-// shortenHandler maneja POST /shorten
 func shortenHandler(w http.ResponseWriter, r *http.Request) {
 	var req shortenRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.URL == "" {
@@ -45,41 +39,45 @@ func shortenHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := rdb.Incr(ctx, "url_id").Result()
+	shortKey := generateCRC32Key(req.URL)
+
+	// Intentamos guardar si no existe (SETNX)
+	set, err := rdb.SetNX(ctx, shortKey, req.URL, 24*time.Hour).Result()
 	if err != nil {
-		http.Error(w, "error generating ID", http.StatusInternalServerError)
+		http.Error(w, "error accessing Redis", http.StatusInternalServerError)
 		return
 	}
 
-	shortKey := generateShortKey(id)
-	err = rdb.Set(ctx, shortKey, req.URL, 24*time.Hour).Err()
-	if err != nil {
-		http.Error(w, "error saving URL", http.StatusInternalServerError)
-		return
+	if !set {
+		// Ya existía, validamos que sea la misma URL
+		existing, err := rdb.Get(ctx, shortKey).Result()
+		if err != nil || existing != req.URL {
+			http.Error(w, "hash collision detected", http.StatusConflict)
+			return
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(shortenResponse{Short: shortKey})
 }
 
-// resolveHandler maneja GET /{short}
-func resolveHandler(w http.ResponseWriter, r *http.Request) {
+func lookupHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	short := vars["short"]
+	key := vars["short"]
 
-	url, err := rdb.Get(ctx, short).Result()
+	url, err := rdb.Get(ctx, key).Result()
 	if err == redis.Nil {
-		http.NotFound(w, r)
+		http.Error(w, "key not found", http.StatusNotFound)
 		return
 	} else if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
 
-	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"url": url})
 }
 
-// deleteHandler maneja DELETE /{short}
 func deleteHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	short := vars["short"]
@@ -97,19 +95,14 @@ func deleteHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	// --- NUEVO: tunear transporte global ---
-	t := http.DefaultTransport.(*http.Transport)
-	t.MaxIdleConns = 10000
-	t.MaxIdleConnsPerHost = 10000
-	t.IdleConnTimeout = 90 * time.Second
-
 	rdb = redis.NewClient(&redis.Options{
-		Addr: os.Getenv("REDIS_ADDR"),
+		Addr:     os.Getenv("REDIS_ADDR"),
+		PoolSize: 1000,
 	})
 
 	router := mux.NewRouter()
 	router.HandleFunc("/shorten", shortenHandler).Methods("POST")
-	router.HandleFunc("/{short}", resolveHandler).Methods("GET")
+	router.HandleFunc("/{short}", lookupHandler).Methods("GET")
 	router.HandleFunc("/{short}", deleteHandler).Methods("DELETE")
 
 	log.Println("URL Shortener service running on :8080")
