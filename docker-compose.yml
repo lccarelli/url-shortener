@@ -33,18 +33,6 @@ services:
     networks:
       - internal
 
-  # k6 runner
-  k6:
-    image: grafana/k6:0.50.0
-    container_name: k6
-    volumes:
-      - ./loadtest:/scripts
-      - ./results:/results
-    networks:
-      - internal
-    depends_on:
-      - shortener-no-redis
-
 networks:
   internal:
     driver: bridge
