@@ -1,0 +1,22 @@
+run:
+  timeout: 2m
+
+linters:
+  enable:
+    - govet
+    - errcheck
+    - gosimple
+    - staticcheck
+    - unused
+    - structcheck
+    - typecheck
+    - revive
+    - gocritic
+
+issues:
+  exclude-use-default: false
+
+tests:
+  skip-dirs:
+    - "docs"
+    - "integration"
