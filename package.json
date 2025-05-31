@@ -16,7 +16,8 @@
     "typescript-eslint": "^8.33.0"
   },
   "scripts": {
-    "lint": "eslint './**/*.{ts,js}' && echo '\n✅ ESLint passed with no errors!'",
-    "lint:fix": "eslint './**/*.{ts,js}' --fix && echo '\n🎉 All fixed and lint passed!'"
+    "lint": "eslint './**/*.{js,ts}'",
+    "lint:fix": "eslint './**/*.{js,ts}' --fix",
+    "eslint-version": "eslint --version"
   }
 }
