@@ -1,8 +1,5 @@
 ## ——— Configuración ————————————————————————————————————————
 COMPOSE     = docker compose -f docker-compose.yml
-K6_IMG      = grafana/k6:0.50.0
-SCRIPT_DIR  = $(PWD)/loadtest
-RESULTS_DIR = $(PWD)/results
 
 ## ——— Build & Stack ————————————————————————————————
 .PHONY: build up down restart logs clean

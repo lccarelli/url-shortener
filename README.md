@@ -36,50 +36,13 @@ En local:
 
 ---
 
-## 🚀 Endpoints
-
-### `POST /shorten`
-
-Acorta una URL
-
-**Request:**
-```json
-{ "url": "https://example.com" }
-```
-
-**Response:**
-```json
-{ "short": "kf12oi" }
-```
-
----
-
-### `GET /{short}`
-
-Redirecciona a la URL original
-
-Ejemplo:
-```
-GET /kf12oi
-→ 307 Temporary Redirect → https://example.com
-```
-
----
-
-### `GET /lookup/{short}`
-
-Devuelve la URL original en formato JSON
-
-**Response:**
-```json
-{ "url": "https://example.com" }
-```
-
----
-
-### `DELETE /{short}`
-
-Elimina una entrada
+🧱 Propuesta de diseño de API (OpenAPI-style)
+Método	Endpoint	Descripción
+POST	/shorten	Crea una URL corta desde una URL larga
+GET	/{short}	Redirecciona a la URL larga (para navegador)
+GET	/lookup/{short}	Devuelve la URL larga (API programática)
+GET	/stats/{short}	Devuelve estadísticas de la URL corta
+DELETE	/{short}	Borra una URL corta
 
 ---
 
