@@ -98,8 +98,6 @@ var SwaggerInfo = &swag.Spec{
 	Description:      "Acorta URLs y redirige tráfico para campañas.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
-	LeftDelim:        "{{",
-	RightDelim:       "}}",
 }
 
 func init() {

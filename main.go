@@ -35,7 +35,7 @@ func main() {
 	})
 
 	repo := repository.NewRedisRepository(rdb, ctx)
-	shortener := service.NewShortenerService(*repo, 24*time.Hour)
+	shortener := service.NewShortenerService(repo, 24*time.Hour)
 	handler := api.NewShortenHandler(shortener)
 
 	router := mux.NewRouter()
