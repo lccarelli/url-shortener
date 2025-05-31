@@ -28,7 +28,3 @@ issues:
     - path: ^main\.go$
       linters:
         - typecheck
-
-build:
-  skip-dirs:
-    - "docs"
