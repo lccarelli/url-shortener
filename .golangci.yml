@@ -1,0 +1,30 @@
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+  go: "1.22"
+
+linters:
+  enable:
+    - govet
+    - errcheck
+    - gosimple
+    - staticcheck
+    - unused
+    - typecheck
+    - revive
+    - gocritic
+
+issues:
+  exclude-use-default: false
+  exclude-dirs:
+    - "docs"
+  exclude-rules:
+    - path: ^config/redis\.go$
+      linters:
+        - typecheck
+    - path: ^repository/redis\.go$
+      linters:
+        - typecheck
+    - path: ^main\.go$
+      linters:
+        - typecheck

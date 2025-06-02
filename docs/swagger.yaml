@@ -1,0 +1,54 @@
+basePath: /
+definitions:
+  model.ShortenRequest:
+    properties:
+      url:
+        type: string
+    type: object
+  model.ShortenResponse:
+    properties:
+      short:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Acorta URLs y redirige tráfico para campañas.
+  title: URL Shortener API
+  version: "1.0"
+paths:
+  /shorten:
+    post:
+      consumes:
+      - application/json
+      description: Genera una clave corta para redireccionar hacia la URL original
+      parameters:
+      - description: URL larga a acortar
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.ShortenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ShortenResponse'
+        "400":
+          description: invalid request
+          schema:
+            type: string
+        "409":
+          description: hash collision detected
+          schema:
+            type: string
+        "500":
+          description: internal error
+          schema:
+            type: string
+      summary: Acorta una URL larga
+      tags:
+      - shortener
+swagger: "2.0"
