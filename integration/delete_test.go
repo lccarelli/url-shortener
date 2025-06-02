@@ -22,11 +22,17 @@ func TestDeleteHandler(t *testing.T) {
 	remover := service.NewRemoverService(repo)
 	handler := api.NewDeleteHandler(remover)
 
-	// Setup - creamos una URL para borrar
-	url := "https://deletable.com"
-	resp, err := shortener.ShortenURL(context.Background(), model.ShortenRequest{URL: url})
+	ctx := context.Background()
+
+	// Preparamos una URL válida para delete_existing
+	respDeletable, err := shortener.ShortenURL(ctx, model.ShortenRequest{URL: "https://deletable.com"})
 	assert.NoError(t, err)
-	validKey := resp.Short
+	validKey := respDeletable.Short
+
+	// Preparamos una URL válida para delete_mixed
+	respMixed, err := shortener.ShortenURL(ctx, model.ShortenRequest{URL: "https://mixed.com"})
+	assert.NoError(t, err)
+	mixedKey := respMixed.Short
 
 	invalidKey := "non_existent_123"
 
@@ -50,18 +56,11 @@ func TestDeleteHandler(t *testing.T) {
 			expectedMiss:   []string{invalidKey},
 		},
 		{
-			name: "delete_mixed",
-			keys: func() []string {
-				resp, err := shortener.ShortenURL(context.Background(), model.ShortenRequest{URL: "https://mixed.com"})
-				assert.NoError(t, err)
-				return []string{resp.Short, invalidKey}
-			}(),
+			name:           "delete_mixed",
+			keys:           []string{mixedKey, invalidKey},
 			expectedStatus: http.StatusMultiStatus,
-			expectedDelete: func() []string {
-				resp, _ := shortener.ShortenURL(context.Background(), model.ShortenRequest{URL: "https://mixed.com"})
-				return []string{resp.Short}
-			}(),
-			expectedMiss: []string{invalidKey},
+			expectedDelete: []string{mixedKey},
+			expectedMiss:   []string{invalidKey},
 		},
 		{
 			name:           "invalid_empty_request",
