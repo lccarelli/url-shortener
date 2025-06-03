@@ -53,7 +53,7 @@ services:
   # Jaeger para trazas
   jaeger:
     image: jaegertracing/all-in-one:latest
-    container_name: jaeger
+    container_name: urlshortener-jaeger
     ports:
       - "16686:16686" # UI Jaeger
       - "14250:14250" # gRPC Collector
